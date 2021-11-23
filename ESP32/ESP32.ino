@@ -12,14 +12,13 @@
 //***************************************************************************************************************
 
 #include <Arduino.h>
-#include "esp_adc_cal.h"
+#include <Adafruit_AHT10.h>
 
 //***************************************************************************************************************
 // Definición de Pines
 //***************************************************************************************************************
+Adafruit_AHT10 aht;
 
-//Pin del mic
-#define Mic 13
 
 //***************************************************************************************************************
 // Prototipo de Funciones
@@ -43,7 +42,13 @@ void setup() {
   Serial.begin(115200);
   Serial2.begin(115200);
 
-  pinMode(Mic, INPUT);
+  Serial.println("Adafruit AHT10 demo!");
+
+  if (! aht.begin()) {
+    Serial.println("Could not find AHT10? Check wiring");
+    while (1) delay(10);
+  }
+  Serial.println("AHT10 found");
   
 }
 
@@ -52,27 +57,16 @@ void setup() {
 //***************************************************************************************************************
 
 void loop() {
-  adcRaw = analogRead(Mic);
-  voltaje = ReadVoltage(adcRaw);
   
-  //voltaje = map(voltaje, 0, 4095, 1, 10); 
-  Serial.println(voltaje);
+  sensors_event_t humidity, temp;
+  aht.getEvent(&humidity, &temp);// populate temp and humidity objects with fresh data
+  voltaje = humidity.relative_humidity;
+  Serial.print("Temperature: "); Serial.print(temp.temperature); Serial.println(" degrees C");
+  Serial.print("Humidity: "); Serial.print(humidity.relative_humidity); Serial.println("% rH");
+  Serial.println("-------------------------------------------------------");
   
   Serial2.write(voltaje);  
 
-  delay(100);
+  delay(500);
 
-  
-  
-
-}
-
-//*************************************************************************************************************
-// Función Calibrar ADC
-//*************************************************************************************************************
-
-float ReadVoltage(int ADC_Raw){   //Calibración del ADC del ESP32
-  esp_adc_cal_characteristics_t adc_chars;  
-  esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_11db, ADC_WIDTH_12Bit, 1100, &adc_chars);  
-  return (esp_adc_cal_raw_to_voltage(ADC_Raw, &adc_chars));
 }
