@@ -20,6 +20,10 @@
 #include "driverlib/sysctl.h"
 #include "driverlib/timer.h"
 
+//SD
+#include <SPI.h>
+#include <SD.h>
+
 #include "bitmaps.h"
 #include "font.h"
 #include "lcd_registers.h"
@@ -30,9 +34,17 @@
 #define LCD_WR PD_3
 #define LCD_RD PE_1
 int DPINS[] = {PB_0, PB_1, PB_2, PB_3, PB_4, PB_5, PB_6, PB_7};
+
+//***************************************************************************************************************************************
+// Definición de Pines
+//***************************************************************************************************************************************
+
+#define btn1 PF_4
+#define btn2 PF_0
 //***************************************************************************************************************************************
 // Functions Prototypes
 //***************************************************************************************************************************************
+
 void LCD_Init(void);
 void LCD_CMD(uint8_t cmd);
 void LCD_DATA(uint8_t data);
@@ -48,17 +60,57 @@ void LCD_Bitmap(unsigned int x, unsigned int y, unsigned int width, unsigned int
 void LCD_Sprite(int x, int y, int width, int height, unsigned char bitmap[], int columns, int index, char flip, char offset);
 
 
+void BTN1(void);
+void BTN2(void);
+void Pantalla(void);
+
+//SD
+void writeSD(void);
+void readSD(void);
+
 extern uint8_t fondo[];
 
 //***************************************************************************************************************
 // Variables Globales
 //***************************************************************************************************************
 int valor;
+String dato;
+int contador = 0; 
+
+
+File archivo; 
+
 
 //***************************************************************************************************************************************
 // Inicialización
 //***************************************************************************************************************************************
 void setup() {
+  
+  Serial.begin(115200);
+  Serial2.begin(115200);
+  
+  while (!Serial) {
+    ; 
+  }
+
+  Serial.print("Initializing SD card...");
+  pinMode(PA_3, OUTPUT);
+  SPI.setModule(0);
+
+  if (!SD.begin(PA_3)) {
+    Serial.println("initialization failed!");
+    return;
+  }
+  Serial.println("initialization done.");
+
+  //Pines de Salida
+  pinMode(btn1, INPUT_PULLUP);
+  pinMode(btn2, INPUT_PULLUP);
+
+  
+  readSD();
+  
+  
   SysCtlClockSet(SYSCTL_SYSDIV_2_5 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN | SYSCTL_XTAL_16MHZ);
   Serial.begin(115200);
   Serial2.begin(115200);
@@ -71,6 +123,8 @@ void setup() {
   FillRect(25, 115, 272, 60, 0x0000);
   String text1 = "Sensor de Humedad";
   LCD_Print(text1, 25, 100, 2, 0xffff, 0x0000);
+  String separador = "-----------------";
+  LCD_Print(separador, 25, 127, 2, 0xffff, 0x0000);
 
 
 }
@@ -83,12 +137,75 @@ void loop() {
     valor = Serial2.read(); 
  
   }
-  Serial.println(valor);
-  //LCD_Print(String Valor(valor), 25, 125, 1, 0xffff, 0x0000);
-
-  delay(10);
+  if(digitalRead(btn1) == LOW){
+    dato = "Humedad: " + String (valor) + "% rH";
+    Serial.println("--------------------------------------------");
+    Serial.println(dato);
+    LCD_Print(dato, 45, 150, 2, 0xffff, 0x0000);
+    contador = 1;
+    Serial2.write(contador);
+    delay(50);
+    contador = 0;
+    Serial2.write(contador);
+    
+     
+   }
+   
+  if(digitalRead(btn2) == LOW){
+    writeSD();
+    contador = 2;
+    Serial2.write(contador);
+    delay(50);
+    contador = 0;
+    Serial2.write(contador);
+    
+   }
+  
+  delay(200);
 
 }
+
+//***************************************************************************************************************
+// Función ReadSD
+//***************************************************************************************************************
+
+void readSD(void){
+  archivo = SD.open("humedad.txt");
+  if (archivo) {
+    Serial.println("El archivo contiene lo siguiente:");
+
+    // read from the file until there's nothing else in it:
+    while (archivo.available()) {
+      Serial.write(archivo.read());
+    }
+    // close the file:
+    archivo.close();
+  } else {
+    // if the file didn't open, print an error:
+    Serial.println("error opening humedad.txt");
+  }
+  }
+
+//***************************************************************************************************************
+// Función WriteSD
+//***************************************************************************************************************
+void writeSD(void){
+    archivo = SD.open("humedad.txt", FILE_WRITE);
+  
+  if (archivo) {
+    Serial.print("Writing to humedad.txt...");
+
+    archivo.println(dato);
+    // close the file:
+    archivo.close();
+    Serial.println("done.");
+  } else {
+    // if the file didn't open, print an error:
+    Serial.println("error opening humedad.txt");
+  }
+  
+  }
+  
 //***************************************************************************************************************************************
 // Función para inicializar LCD
 //***************************************************************************************************************************************
@@ -344,7 +461,7 @@ void LCD_Print(String text, int x, int y, int fontSize, int color, int backgroun
 
   char charInput ;
   int cLength = text.length();
-  Serial.println(cLength, DEC);
+  //Serial.println(cLength, DEC);
   int charDec ;
   int c ;
   int charHex ;
@@ -352,7 +469,7 @@ void LCD_Print(String text, int x, int y, int fontSize, int color, int backgroun
   text.toCharArray(char_array, cLength + 1) ;
   for (int i = 0; i < cLength ; i++) {
     charInput = char_array[i];
-    Serial.println(char_array[i]);
+    //Serial.println(char_array[i]);
     charDec = int(charInput);
     digitalWrite(LCD_CS, LOW);
     SetWindows(x + (i * fontXSize), y, x + (i * fontXSize) + fontXSize - 1, y + fontYSize );
