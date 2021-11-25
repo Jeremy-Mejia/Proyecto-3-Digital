@@ -8,18 +8,32 @@
 #endif
 
 // Which pin on the Arduino is connected to the NeoPixels?
-#define PIN        13 // On Trinket or Gemma, suggest changing this to 1
+#define PIN        27 // On Trinket or Gemma, suggest changing this to 1
 
 // How many NeoPixels are attached to the Arduino?
 #define NUMPIXELS 1 // Popular NeoPixel ring size
-
+#define NUMPIXELS 2
+#define NUMPIXELS 3
+#define NUMPIXELS 4
+#define NUMPIXELS 5
+#define NUMPIXELS 6
+#define NUMPIXELS 7
+#define NUMPIXELS 8
+#define NUMPIXELS 9
+#define NUMPIXELS 10
+#define NUMPIXELS 11
+#define NUMPIXELS 12
+#define NUMPIXELS 13
+#define NUMPIXELS 14
+#define NUMPIXELS 15
+#define NUMPIXELS 16
 // When setting up the NeoPixel library, we tell it how many pixels,
 // and which pin to use to send signals. Note that for older NeoPixel
 // strips you might need to change the third parameter -- see the
 // strandtest example for more information on possible values.
 Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
-#define DELAYVAL 500 // Time (in milliseconds) to pause between pixels
+#define DELAYVAL 40 // Time (in milliseconds) to pause between pixels
 
 void setup() {
   // These lines are specifically to support the Adafruit Trinket 5V 16 MHz.
@@ -41,8 +55,12 @@ void loop() {
 
     // pixels.Color() takes RGB values, from 0,0,0 up to 255,255,255
     // Here we're using a moderately bright green color:
-    pixels.setPixelColor(i, pixels.Color(0, 150, 0));
+    pixels.setPixelColor(i, pixels.Color(255, 0, 0));
 
+  //pixels.setPixelColor(5, pixels.Color(255, 150, 0));
+  //pixels.setPixelColor(4, pixels.Color(0, 150, 0));
+  //pixels.setPixelColor(3, pixels.Color(0, 150, 20));
+  
     pixels.show();   // Send the updated pixel colors to the hardware.
 
     delay(DELAYVAL); // Pause before next pass through loop
